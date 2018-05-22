@@ -32,7 +32,6 @@ import io.gravitee.gateway.api.buffer.Buffer;
 import io.gravitee.gateway.api.expression.TemplateContext;
 import io.gravitee.gateway.api.expression.TemplateVariableProvider;
 import io.gravitee.gateway.api.handler.Handler;
-import io.gravitee.gateway.api.proxy.ProxyConnection;
 import io.gravitee.gateway.api.proxy.ProxyResponse;
 import io.gravitee.gateway.handlers.api.context.ExecutionContextFactory;
 import io.gravitee.gateway.handlers.api.cors.CorsHandler;
@@ -41,9 +40,8 @@ import io.gravitee.gateway.handlers.api.logging.LoggableClientRequest;
 import io.gravitee.gateway.handlers.api.logging.LoggableClientResponse;
 import io.gravitee.gateway.handlers.api.policy.api.ApiPolicyChainResolver;
 import io.gravitee.gateway.handlers.api.policy.plan.PlanPolicyChainResolver;
-import io.gravitee.gateway.http.core.direct.DirectProxyConnection;
-import io.gravitee.gateway.http.core.endpoint.EndpointLifecycleManager;
-import io.gravitee.gateway.http.core.invoker.DefaultInvoker;
+import io.gravitee.gateway.core.proxy.DirectProxyConnection;
+import io.gravitee.gateway.core.endpoint.lifecycle.EndpointLifecycleManager;
 import io.gravitee.gateway.policy.PolicyChainResolver;
 import io.gravitee.gateway.policy.PolicyManager;
 import io.gravitee.gateway.policy.StreamType;
@@ -61,7 +59,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
@@ -76,7 +73,7 @@ public class ApiReactorHandler extends AbstractReactorHandler implements Templat
 
     /**
      * Invoker is the connector to access the remote backend / endpoint.
-     * If not override by a policy, default invoker is {@link DefaultInvoker}.
+     * If not override by a policy, default invoker is {@link io.gravitee.gateway.core.invoker.DefaultInvoker}.
      */
     @Autowired
     private Invoker invoker;

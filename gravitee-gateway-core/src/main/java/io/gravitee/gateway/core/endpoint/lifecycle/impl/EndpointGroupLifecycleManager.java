@@ -5,9 +5,9 @@ import io.gravitee.common.util.ChangeListener;
 import io.gravitee.common.util.ObservableCollection;
 import io.gravitee.common.util.ObservableSet;
 import io.gravitee.definition.model.Endpoint;
-import io.gravitee.definition.model.EndpointGroup;
 import io.gravitee.gateway.core.endpoint.factory.EndpointFactory;
 import io.gravitee.gateway.core.endpoint.lifecycle.EndpointLifecycleManager;
+import io.gravitee.gateway.core.endpoint.lifecycle.LoadBalancedEndpointGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
@@ -33,9 +34,9 @@ public class EndpointGroupLifecycleManager extends AbstractLifecycleComponent<En
     private final Map<String, String> endpointsTarget = new LinkedHashMap<>();
     private final ObservableCollection<io.gravitee.gateway.api.endpoint.Endpoint> endpoints = new ObservableCollection<>(new ArrayList<>());
 
-    private final EndpointGroup group;
+    private final LoadBalancedEndpointGroup group;
 
-    public EndpointGroupLifecycleManager(EndpointGroup group) {
+    public EndpointGroupLifecycleManager(LoadBalancedEndpointGroup group) {
         this.group = group;
     }
 
@@ -44,12 +45,15 @@ public class EndpointGroupLifecycleManager extends AbstractLifecycleComponent<En
         ObservableSet<Endpoint> endpoints = new ObservableSet<>(group.getEndpoints());
         endpoints.addListener(EndpointGroupLifecycleManager.this);
         group.setEndpoints(endpoints);
-
     }
 
     @Override
     protected void doStop() throws Exception {
+        //TODO:
+    }
 
+    protected Predicate<Endpoint> filter() {
+        return endpoint -> !endpoint.isBackup();
     }
 
     public void start(io.gravitee.definition.model.Endpoint model) {

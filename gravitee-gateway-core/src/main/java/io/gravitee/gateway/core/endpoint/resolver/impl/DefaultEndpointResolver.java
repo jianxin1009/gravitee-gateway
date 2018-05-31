@@ -16,11 +16,14 @@
 package io.gravitee.gateway.core.endpoint.resolver.impl;
 
 import com.google.common.net.UrlEscapers;
+import io.gravitee.definition.model.EndpointGroup;
 import io.gravitee.gateway.api.Connector;
 import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Request;
 import io.gravitee.gateway.api.endpoint.Endpoint;
 import io.gravitee.gateway.api.endpoint.EndpointManager;
+import io.gravitee.gateway.core.endpoint.lifecycle.GroupManager;
+import io.gravitee.gateway.core.endpoint.lifecycle.LoadBalancedEndpointGroup;
 import io.gravitee.gateway.core.endpoint.resolver.EndpointResolver;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,8 +43,14 @@ public class DefaultEndpointResolver implements EndpointResolver {
 
     private static final String URI_PATH_SEPARATOR = "/";
 
+    private static final String GROUP_REFERENCE_PREFIX = "group:";
+    private static final String ENDPOINT_REFERENCE_PREFIX = "endpoint:";
+
     @Autowired
     private EndpointManager endpointManager;
+
+    @Autowired
+    private GroupManager groupManager;
 
     public ResolvedEndpoint resolve(Request serverRequest, ExecutionContext executionContext) {
         // Get target if overridden by a policy
@@ -59,15 +68,19 @@ public class DefaultEndpointResolver implements EndpointResolver {
      */
     private ResolvedEndpoint selectLoadBalancedEndpoint(Request serverRequest, ExecutionContext executionContext) {
         // How to resolve the next endpoint ?
-
         Endpoint endpoint = nextEndpoint(serverRequest, executionContext);
 
         return createEndpoint(endpoint, (endpoint != null) ? endpoint.target() + serverRequest.pathInfo() : null);
     }
 
     private Endpoint nextEndpoint(Request serverRequest, ExecutionContext executionContext) {
-        endpointManager.endpoints();
+        // Get the first group
+        LoadBalancedEndpointGroup group = groupManager.groups().iterator().next();
 
+        // Resolve to the next endpoint from group LB
+        String endpoint = group.next();
+
+        return createEndpoint(endpoint, (endpoint != null) ? endpoint.target() + encodedTarget : null);
         return null;
     }
 
@@ -99,13 +112,32 @@ public class DefaultEndpointResolver implements EndpointResolver {
 
             return createEndpoint(endpoint, (endpoint != null) ? endpoint.target() + encodedTarget : null);
         } else {
-            Endpoint endpoint = endpointManager.endpoints()
-                    .stream()
-                    .filter(endpointEntry -> encodedTarget.startsWith(endpointEntry.target()))
-                    .findFirst()
-                    .orElse(endpointManager.endpoints().iterator().next());
+            if (encodedTarget.startsWith(GROUP_REFERENCE_PREFIX)) {
+                String groupRef = encodedTarget.substring(
+                        GROUP_REFERENCE_PREFIX.length(),
+                        encodedTarget.indexOf(':', GROUP_REFERENCE_PREFIX.length() + 1));
 
-            return createEndpoint(endpoint, encodedTarget);
+                // Get next endpoint from LB group
+                return null;
+            } else if (encodedTarget.startsWith(ENDPOINT_REFERENCE_PREFIX)) {
+                String endpointRef = encodedTarget.substring(
+                        ENDPOINT_REFERENCE_PREFIX.length(),
+                        encodedTarget.indexOf(':', ENDPOINT_REFERENCE_PREFIX.length() + 1));
+
+                // Get the referenced endpoint
+                Endpoint endpoint = endpointManager.get(endpointRef);
+
+                return createEndpoint(endpoint, encodedTarget);
+            } else {
+                // Try to match an endpoint according to the target URL
+                Endpoint endpoint = endpointManager.endpoints()
+                        .stream()
+                        .filter(endpointEntry -> encodedTarget.startsWith(endpointEntry.target()))
+                        .findFirst()
+                        .orElse(endpointManager.endpoints().iterator().next());
+
+                return createEndpoint(endpoint, encodedTarget);
+            }
         }
     }
 

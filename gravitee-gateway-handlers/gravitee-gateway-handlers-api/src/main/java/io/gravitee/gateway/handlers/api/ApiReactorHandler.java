@@ -33,6 +33,8 @@ import io.gravitee.gateway.api.expression.TemplateContext;
 import io.gravitee.gateway.api.expression.TemplateVariableProvider;
 import io.gravitee.gateway.api.handler.Handler;
 import io.gravitee.gateway.api.proxy.ProxyResponse;
+import io.gravitee.gateway.core.endpoint.lifecycle.GroupLifecyleManager;
+import io.gravitee.gateway.core.proxy.DirectProxyConnection;
 import io.gravitee.gateway.handlers.api.context.ExecutionContextFactory;
 import io.gravitee.gateway.handlers.api.cors.CorsHandler;
 import io.gravitee.gateway.handlers.api.definition.Api;
@@ -40,8 +42,6 @@ import io.gravitee.gateway.handlers.api.logging.LoggableClientRequest;
 import io.gravitee.gateway.handlers.api.logging.LoggableClientResponse;
 import io.gravitee.gateway.handlers.api.policy.api.ApiPolicyChainResolver;
 import io.gravitee.gateway.handlers.api.policy.plan.PlanPolicyChainResolver;
-import io.gravitee.gateway.core.proxy.DirectProxyConnection;
-import io.gravitee.gateway.core.endpoint.lifecycle.EndpointLifecycleManager;
 import io.gravitee.gateway.policy.PolicyChainResolver;
 import io.gravitee.gateway.policy.PolicyManager;
 import io.gravitee.gateway.policy.StreamType;
@@ -321,7 +321,7 @@ public class ApiReactorHandler extends AbstractReactorHandler implements Templat
         // Start resources before
         applicationContext.getBean(ResourceLifecycleManager.class).start();
         applicationContext.getBean(PolicyManager.class).start();
-        applicationContext.getBean(EndpointLifecycleManager.class).start();
+        applicationContext.getBean(GroupLifecyleManager.class).start();
 
         long endTime = System.currentTimeMillis(); // Get the end Time
         logger.info("API handler started in {} ms and now ready to accept requests on {}/*",
@@ -334,7 +334,7 @@ public class ApiReactorHandler extends AbstractReactorHandler implements Templat
 
         applicationContext.getBean(PolicyManager.class).stop();
         applicationContext.getBean(ResourceLifecycleManager.class).stop();
-        applicationContext.getBean(EndpointLifecycleManager.class).stop();
+        applicationContext.getBean(GroupLifecyleManager.class).stop();
 
         super.doStop();
         logger.info("API handler is now stopped", api);

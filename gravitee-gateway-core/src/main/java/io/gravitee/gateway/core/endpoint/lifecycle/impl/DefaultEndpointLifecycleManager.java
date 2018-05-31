@@ -76,10 +76,6 @@ public class DefaultEndpointLifecycleManager extends AbstractLifecycleComponent<
                 });
     }
 
-    protected Predicate<io.gravitee.definition.model.Endpoint> filter() {
-        return endpoint -> !endpoint.isBackup();
-    }
-
     @Override
     protected void doStop() throws Exception {
         Iterator<EndpointGroupLifecycleManager> ite = groups.values().iterator();
@@ -113,14 +109,14 @@ public class DefaultEndpointLifecycleManager extends AbstractLifecycleComponent<
                 .collect(
                         Collectors.toMap(
                                 Endpoint::name,
-                                endpoint -> "endpoint:" + endpoint.name()));
+                                endpoint -> "endpoint:" + endpoint.name() + ':'));
 
         // ... but also to all groups
         Map<String, String> groupRefs = groups.keySet().stream()
                 .collect(
                         Collectors.toMap(
                                 group -> group,
-                                group -> "group:" + group));
+                                group -> "group:" + group + ':'));
 
         Map<String, String> references = Stream.concat(endpointRefs.entrySet().stream(), groupRefs.entrySet().stream())
                 .collect(Collectors

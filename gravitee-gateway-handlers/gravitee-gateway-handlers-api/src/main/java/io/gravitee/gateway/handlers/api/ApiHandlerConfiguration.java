@@ -16,9 +16,10 @@
 package io.gravitee.gateway.handlers.api;
 
 import io.gravitee.definition.model.Api;
+import io.gravitee.gateway.core.endpoint.lifecycle.EndpointLifecycleManagerFactory;
+import io.gravitee.gateway.core.invoker.InvokerFactory;
 import io.gravitee.gateway.handlers.api.context.ExecutionContextFactory;
 import io.gravitee.gateway.handlers.api.context.TemplateVariableProviderFactory;
-import io.gravitee.gateway.handlers.api.http.client.spring.HttpClientConfiguration;
 import io.gravitee.gateway.handlers.api.path.PathResolver;
 import io.gravitee.gateway.handlers.api.path.impl.ApiPathResolverImpl;
 import io.gravitee.gateway.handlers.api.policy.security.PlanBasedAuthenticationHandlerEnhancer;
@@ -33,19 +34,17 @@ import io.gravitee.gateway.resource.ResourceConfigurationFactory;
 import io.gravitee.gateway.resource.ResourceLifecycleManager;
 import io.gravitee.gateway.resource.internal.ResourceConfigurationFactoryImpl;
 import io.gravitee.gateway.resource.internal.ResourceManagerImpl;
-import io.gravitee.gateway.security.core.SecurityProviderManager;
 import io.gravitee.gateway.security.core.AuthenticationHandlerEnhancer;
 import io.gravitee.gateway.security.core.SecurityProviderLoader;
+import io.gravitee.gateway.security.core.SecurityProviderManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
  * @author GraviteeSource Team
  */
 @Configuration
-@Import({ HttpClientConfiguration.class })
 public class ApiHandlerConfiguration {
 
     @Bean
@@ -106,5 +105,15 @@ public class ApiHandlerConfiguration {
     @Bean
     public TemplateVariableProviderFactory templateVariableProviderFactory() {
         return new TemplateVariableProviderFactory();
+    }
+
+    @Bean
+    public InvokerFactory httpInvokerFactory() {
+        return new InvokerFactory();
+    }
+
+    @Bean
+    public EndpointLifecycleManagerFactory endpointLifecycleManagerFactory() {
+        return new EndpointLifecycleManagerFactory();
     }
 }

@@ -24,6 +24,7 @@ import io.gravitee.definition.model.HttpProxy;
 import io.gravitee.definition.model.endpoint.HttpEndpoint;
 import io.gravitee.gateway.api.Connector;
 import io.gravitee.gateway.api.buffer.Buffer;
+import io.gravitee.gateway.api.endpoint.Endpoint;
 import io.gravitee.gateway.api.proxy.ProxyConnection;
 import io.gravitee.gateway.api.proxy.ProxyRequest;
 import io.netty.channel.ConnectTimeoutException;
@@ -42,8 +43,7 @@ import java.net.ConnectException;
 import java.net.NoRouteToHostException;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
@@ -56,6 +56,26 @@ public class VertxHttpClient extends AbstractLifecycleComponent<Connector> imple
     private final Logger LOGGER = LoggerFactory.getLogger(VertxHttpClient.class);
 
     private static final String HTTPS_SCHEME = "https";
+    private static final int DEFAULT_HTTP_PORT = 80;
+    private static final int DEFAULT_HTTPS_PORT = 443;
+    private static final Set<String> HOP_HEADERS;
+
+    static {
+        Set<String> hopHeaders = new HashSet<>();
+
+        // Standard HTTP headers
+        hopHeaders.add(HttpHeaders.CONNECTION);
+        hopHeaders.add(HttpHeaders.KEEP_ALIVE);
+        hopHeaders.add(HttpHeaders.PROXY_AUTHORIZATION);
+        hopHeaders.add(HttpHeaders.PROXY_AUTHENTICATE);
+        hopHeaders.add(HttpHeaders.PROXY_CONNECTION);
+        hopHeaders.add(HttpHeaders.TRANSFER_ENCODING);
+        hopHeaders.add(HttpHeaders.TE);
+        hopHeaders.add(HttpHeaders.TRAILER);
+        hopHeaders.add(HttpHeaders.UPGRADE);
+
+        HOP_HEADERS = Collections.unmodifiableSet(hopHeaders);
+    }
 
     @Resource
     private Vertx vertx;
@@ -75,9 +95,24 @@ public class VertxHttpClient extends AbstractLifecycleComponent<Connector> imple
     public ProxyConnection request(ProxyRequest proxyRequest) {
         HttpClient httpClient = httpClients.computeIfAbsent(Vertx.currentContext(), createHttpClient());
 
+        // Remove hop-by-hop headers.
+        for (String header : HOP_HEADERS) {
+            proxyRequest.headers().remove(header);
+        }
+
         final URI uri = proxyRequest.uri();
         final int port = uri.getPort() != -1 ? uri.getPort() :
                 (HTTPS_SCHEME.equals(uri.getScheme()) ? 443 : 80);
+
+        // Override with default headers defined for endpoint
+        if (endpoint.getHostHeader() != null && !endpoint.getHostHeader().isEmpty()) {
+            proxyRequest.headers().set(HttpHeaders.HOST, endpoint.getHostHeader());
+        } else {
+            final String host = (port == DEFAULT_HTTP_PORT || port == DEFAULT_HTTPS_PORT) ?
+                    uri.getHost() : uri.getHost() + ':' + port;
+
+            proxyRequest.headers().set(HttpHeaders.HOST, host);
+        }
 
         String relativeUri = (uri.getRawQuery() == null) ? uri.getRawPath() : uri.getRawPath() + '?' + uri.getRawQuery();
 

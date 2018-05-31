@@ -15,7 +15,6 @@
  */
 package io.gravitee.gateway.core.invoker;
 
-import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.common.http.HttpMethod;
 import io.gravitee.common.http.HttpStatusCode;
 import io.gravitee.common.util.MultiValueMap;
@@ -24,7 +23,6 @@ import io.gravitee.gateway.api.ExecutionContext;
 import io.gravitee.gateway.api.Invoker;
 import io.gravitee.gateway.api.Request;
 import io.gravitee.gateway.api.buffer.Buffer;
-import io.gravitee.gateway.api.endpoint.Endpoint;
 import io.gravitee.gateway.api.handler.Handler;
 import io.gravitee.gateway.api.proxy.ProxyConnection;
 import io.gravitee.gateway.api.proxy.ProxyRequest;
@@ -41,36 +39,14 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
  * @author GraviteeSource Team
  */
 public class DefaultInvoker implements Invoker {
-
-    private static final String HTTPS_SCHEME = "https";
-    private static final int DEFAULT_HTTP_PORT = 80;
-    private static final int DEFAULT_HTTPS_PORT = 443;
-
-    private static final Set<String> HOP_HEADERS;
-
-    static {
-        Set<String> hopHeaders = new HashSet<>();
-
-        // Standard HTTP headers
-        hopHeaders.add(HttpHeaders.CONNECTION);
-        hopHeaders.add(HttpHeaders.KEEP_ALIVE);
-        hopHeaders.add(HttpHeaders.PROXY_AUTHORIZATION);
-        hopHeaders.add(HttpHeaders.PROXY_AUTHENTICATE);
-        hopHeaders.add(HttpHeaders.PROXY_CONNECTION);
-        hopHeaders.add(HttpHeaders.TRANSFER_ENCODING);
-        hopHeaders.add(HttpHeaders.TE);
-        hopHeaders.add(HttpHeaders.TRAILER);
-        hopHeaders.add(HttpHeaders.UPGRADE);
-
-        HOP_HEADERS = Collections.unmodifiableSet(hopHeaders);
-    }
 
     @Autowired
     protected Api api;
@@ -107,7 +83,7 @@ public class DefaultInvoker implements Invoker {
                         .uri(uri)
                         .method(setHttpMethod(executionContext, serverRequest))
                         .rawMethod(serverRequest.rawMethod())
-                        .headers(setProxyHeaders(serverRequest.headers(), uri, endpoint.getEndpoint()))
+                        .headers(serverRequest.headers())
                         .build();
 
                 ProxyConnection proxyConnection = endpoint.getConnector().request(proxyRequest);
@@ -139,27 +115,6 @@ public class DefaultInvoker implements Invoker {
         serverRequest.resume();
 
         return serverRequest;
-    }
-
-    private HttpHeaders setProxyHeaders(HttpHeaders headers, URI requestUri, Endpoint endpoint) {
-        // Remove hop-by-hop headers.
-        for (String header : HOP_HEADERS) {
-            headers.remove(header);
-        }
-
-        // Get HOST header
-        final int port = requestUri.getPort() != -1 ? requestUri.getPort() :
-                (HTTPS_SCHEME.equals(requestUri.getScheme()) ? DEFAULT_HTTPS_PORT : DEFAULT_HTTP_PORT);
-        final String host = (port == DEFAULT_HTTP_PORT || port == DEFAULT_HTTPS_PORT) ?
-                requestUri.getHost() : requestUri.getHost() + ':' + port;
-        headers.set(HttpHeaders.HOST, host);
-
-        // Override with default headers defined for endpoint
-        if (!endpoint.headers().isEmpty()) {
-            endpoint.headers().forEach(headers::put);
-        }
-
-        return headers;
     }
 
     private URI encodeQueryParameters(String uri, MultiValueMap<String, String> parameters) throws MalformedURLException, URISyntaxException {

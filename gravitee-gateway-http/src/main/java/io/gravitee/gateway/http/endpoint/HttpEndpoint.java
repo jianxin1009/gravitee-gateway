@@ -15,7 +15,6 @@
  */
 package io.gravitee.gateway.http.endpoint;
 
-import io.gravitee.common.http.HttpHeaders;
 import io.gravitee.definition.model.Endpoint;
 import io.gravitee.gateway.api.Connector;
 
@@ -27,15 +26,10 @@ public class HttpEndpoint implements io.gravitee.gateway.api.endpoint.Endpoint {
 
     private final io.gravitee.definition.model.endpoint.HttpEndpoint endpoint;
     private final Connector connector;
-    private final HttpHeaders headers = new HttpHeaders();
 
     public HttpEndpoint(final io.gravitee.definition.model.endpoint.HttpEndpoint endpoint, final Connector connector) {
         this.endpoint = endpoint;
         this.connector = connector;
-
-        if (endpoint.getHostHeader() != null && !endpoint.getHostHeader().isEmpty()) {
-            this.headers.set(HttpHeaders.HOST, endpoint.getHostHeader());
-        }
     }
 
     @Override
@@ -46,11 +40,6 @@ public class HttpEndpoint implements io.gravitee.gateway.api.endpoint.Endpoint {
     @Override
     public String target() {
         return endpoint.getTarget();
-    }
-
-    @Override
-    public HttpHeaders headers() {
-        return headers;
     }
 
     @Override

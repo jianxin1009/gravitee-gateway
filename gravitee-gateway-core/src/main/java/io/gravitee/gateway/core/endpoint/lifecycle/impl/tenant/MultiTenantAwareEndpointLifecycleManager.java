@@ -17,6 +17,7 @@ package io.gravitee.gateway.core.endpoint.lifecycle.impl.tenant;
 
 import io.gravitee.definition.model.Endpoint;
 import io.gravitee.gateway.core.endpoint.lifecycle.impl.DefaultEndpointLifecycleManager;
+import io.gravitee.gateway.core.endpoint.lifecycle.impl.EndpointGroupLifecycleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,7 @@ import java.util.function.Predicate;
  * @author David BRASSELY (david.brassely at graviteesource.com)
  * @author GraviteeSource Team
  */
-public class MultiTenantAwareEndpointLifecycleManager extends DefaultEndpointLifecycleManager {
+public class MultiTenantAwareEndpointLifecycleManager extends EndpointGroupLifecycleManager {
 
     private final Logger logger = LoggerFactory.getLogger(MultiTenantAwareEndpointLifecycleManager.class);
 

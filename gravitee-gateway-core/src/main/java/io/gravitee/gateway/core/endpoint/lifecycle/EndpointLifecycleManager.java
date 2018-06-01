@@ -16,7 +16,7 @@
 package io.gravitee.gateway.core.endpoint.lifecycle;
 
 import io.gravitee.common.component.LifecycleComponent;
-import io.gravitee.gateway.api.endpoint.EndpointManager;
+import io.gravitee.gateway.core.endpoint.EndpointManager;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)

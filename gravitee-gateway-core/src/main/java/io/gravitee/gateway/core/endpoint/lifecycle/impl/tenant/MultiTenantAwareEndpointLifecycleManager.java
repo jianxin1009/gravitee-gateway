@@ -16,7 +16,7 @@
 package io.gravitee.gateway.core.endpoint.lifecycle.impl.tenant;
 
 import io.gravitee.definition.model.Endpoint;
-import io.gravitee.gateway.core.endpoint.lifecycle.impl.DefaultEndpointLifecycleManager;
+import io.gravitee.definition.model.EndpointGroup;
 import io.gravitee.gateway.core.endpoint.lifecycle.impl.EndpointGroupLifecycleManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,8 @@ public class MultiTenantAwareEndpointLifecycleManager extends EndpointGroupLifec
 
     private final String tenant;
 
-    public MultiTenantAwareEndpointLifecycleManager(String tenant) {
+    public MultiTenantAwareEndpointLifecycleManager(EndpointGroup group, String tenant) {
+        super(group);
         this.tenant = tenant;
     }
 

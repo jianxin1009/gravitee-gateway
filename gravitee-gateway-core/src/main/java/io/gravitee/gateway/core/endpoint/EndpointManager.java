@@ -13,42 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.gravitee.gateway.core.loadbalancer;
+package io.gravitee.gateway.core.endpoint;
 
 import io.gravitee.gateway.api.endpoint.Endpoint;
-import io.gravitee.gateway.api.lb.LoadBalancerStrategy;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
  * @author GraviteeSource Team
  */
-public abstract class LoadBalancer implements LoadBalancerStrategy {
+public interface EndpointManager {
 
-    protected Collection<Endpoint> endpoints;
+    Endpoint get(String endpointName);
 
-    LoadBalancer(Collection<Endpoint> endpoints) {
-        this.endpoints = endpoints;
-    }
-
-    /**
-     * Select only available endpoints
-     * @return
-     */
-    protected List<Endpoint> endpoints() {
-        return endpoints
-                .stream()
-                .filter(Endpoint::available)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public Endpoint next() {
-        return nextEndpoint();
-    }
-
-    abstract Endpoint nextEndpoint();
+    Collection<Endpoint> endpoints();
 }

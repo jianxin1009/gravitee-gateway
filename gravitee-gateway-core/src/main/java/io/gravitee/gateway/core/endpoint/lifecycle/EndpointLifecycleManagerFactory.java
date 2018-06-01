@@ -32,11 +32,13 @@ public class EndpointLifecycleManagerFactory extends AbstractAutowiringFactoryBe
 
     @Override
     protected EndpointLifecycleManager doCreateInstance() throws Exception {
+        /*
         if (gatewayConfiguration.tenant().isPresent()) {
             return new MultiTenantAwareEndpointLifecycleManager(gatewayConfiguration.tenant().get());
         }
 
         return new DefaultEndpointLifecycleManager();
+        */ return null;
     }
 
     @Override

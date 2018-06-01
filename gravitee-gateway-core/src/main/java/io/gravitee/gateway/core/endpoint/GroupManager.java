@@ -1,4 +1,6 @@
-package io.gravitee.gateway.core.endpoint.lifecycle;
+package io.gravitee.gateway.core.endpoint;
+
+import io.gravitee.gateway.core.endpoint.lifecycle.LoadBalancedEndpointGroup;
 
 import java.util.Collection;
 
@@ -9,6 +11,8 @@ import java.util.Collection;
 public interface GroupManager {
 
     LoadBalancedEndpointGroup get(String groupName);
+
+    LoadBalancedEndpointGroup getDefault();
 
     Collection<LoadBalancedEndpointGroup> groups();
 }

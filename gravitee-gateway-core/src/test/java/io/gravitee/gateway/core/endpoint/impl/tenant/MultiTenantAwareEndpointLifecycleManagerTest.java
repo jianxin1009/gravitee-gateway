@@ -44,7 +44,7 @@ public class MultiTenantAwareEndpointLifecycleManagerTest {
 
     @InjectMocks
     private MultiTenantAwareEndpointLifecycleManager endpointLifecycleManager =
-            new MultiTenantAwareEndpointLifecycleManager("europe");
+            new MultiTenantAwareEndpointLifecycleManager(null, "europe");
 
     @Mock
     private Api api;

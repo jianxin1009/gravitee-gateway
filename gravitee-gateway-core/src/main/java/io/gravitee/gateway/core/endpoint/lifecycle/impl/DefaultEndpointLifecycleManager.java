@@ -104,6 +104,7 @@ public class DefaultEndpointLifecycleManager extends AbstractLifecycleComponent<
     @Override
     public void provide(TemplateContext templateContext) {
         // We should add a reference to all the endpoints of the system...
+        /*
         Map<String, String> endpointRefs = groups.values().stream()
                 .flatMap(group -> group.endpoints().stream())
                 .collect(
@@ -125,5 +126,6 @@ public class DefaultEndpointLifecycleManager extends AbstractLifecycleComponent<
                                 Collections::<String, String>unmodifiableMap));
 
         templateContext.setVariable("endpoints", references);
+        */
     }
 }

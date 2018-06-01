@@ -5,17 +5,23 @@ import io.gravitee.common.util.ChangeListener;
 import io.gravitee.common.util.ObservableCollection;
 import io.gravitee.common.util.ObservableSet;
 import io.gravitee.definition.model.Endpoint;
+import io.gravitee.definition.model.EndpointGroup;
+import io.gravitee.definition.model.LoadBalancer;
+import io.gravitee.gateway.api.lb.LoadBalancerStrategy;
 import io.gravitee.gateway.core.endpoint.factory.EndpointFactory;
 import io.gravitee.gateway.core.endpoint.lifecycle.EndpointLifecycleManager;
 import io.gravitee.gateway.core.endpoint.lifecycle.LoadBalancedEndpointGroup;
+import io.gravitee.gateway.core.endpoint.ref.EndpointReference;
+import io.gravitee.gateway.core.endpoint.ref.ReferenceRegister;
+import io.gravitee.gateway.core.loadbalancer.RandomLoadBalancer;
+import io.gravitee.gateway.core.loadbalancer.RoundRobinLoadBalancer;
+import io.gravitee.gateway.core.loadbalancer.WeightedRandomLoadBalancer;
+import io.gravitee.gateway.core.loadbalancer.WeightedRoundRobinLoadBalancer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Predicate;
 
 /**
@@ -25,31 +31,68 @@ import java.util.function.Predicate;
 public class EndpointGroupLifecycleManager extends AbstractLifecycleComponent<EndpointLifecycleManager>
         implements EndpointLifecycleManager, ChangeListener<Endpoint> {
 
-    private final Logger logger = LoggerFactory.getLogger(DefaultEndpointLifecycleManager.class);
+    private final Logger logger = LoggerFactory.getLogger(EndpointGroupLifecycleManager.class);
 
     @Autowired
     private EndpointFactory endpointFactory;
 
+    @Autowired
+    private ReferenceRegister referenceRegister;
+
     private final Map<String, io.gravitee.gateway.api.endpoint.Endpoint> endpointsByName = new LinkedHashMap<>();
-    private final Map<String, String> endpointsTarget = new LinkedHashMap<>();
     private final ObservableCollection<io.gravitee.gateway.api.endpoint.Endpoint> endpoints = new ObservableCollection<>(new ArrayList<>());
 
-    private final LoadBalancedEndpointGroup group;
+    private final EndpointGroup group;
+    private LoadBalancedEndpointGroup lbGroup;
 
-    public EndpointGroupLifecycleManager(LoadBalancedEndpointGroup group) {
+    public EndpointGroupLifecycleManager(EndpointGroup group) {
         this.group = group;
     }
 
     @Override
     protected void doStart() throws Exception {
+        // Wrap endpoints with an observable collection
         ObservableSet<Endpoint> endpoints = new ObservableSet<>(group.getEndpoints());
         endpoints.addListener(EndpointGroupLifecycleManager.this);
         group.setEndpoints(endpoints);
+
+        LoadBalancer loadBalancerDef = group.getLoadBalancer();
+        LoadBalancerStrategy strategy;
+
+        if (loadBalancerDef != null) {
+            switch (loadBalancerDef.getType()) {
+                case RANDOM:
+                    strategy = new RandomLoadBalancer(this.endpoints);
+                    break;
+                case WEIGHTED_RANDOM:
+                    strategy = new WeightedRandomLoadBalancer(this.endpoints);
+                    break;
+                case WEIGHTED_ROUND_ROBIN:
+                    strategy = new WeightedRoundRobinLoadBalancer(this.endpoints);
+                    break;
+                default:
+                    strategy = new RoundRobinLoadBalancer(this.endpoints);
+                    break;
+            }
+        } else {
+            strategy = new RoundRobinLoadBalancer(this.endpoints);
+        }
+
+        lbGroup = new LoadBalancedEndpointGroup(group.getName(), strategy);
+
+        endpoints
+                .stream()
+                .filter(filter())
+                .forEach(this::start);
     }
 
     @Override
     protected void doStop() throws Exception {
-        //TODO:
+        Iterator<io.gravitee.gateway.api.endpoint.Endpoint> ite = endpointsByName.values().iterator();
+        while (ite.hasNext()) {
+            stop(ite.next());
+            ite.remove();
+        }
     }
 
     protected Predicate<Endpoint> filter() {
@@ -67,9 +110,9 @@ public class EndpointGroupLifecycleManager extends AbstractLifecycleComponent<En
 
                 endpoints.add(endpoint);
                 endpointsByName.put(endpoint.name(), endpoint);
-                endpointsTarget.put(endpoint.name(), endpoint.target());
-            }
 
+                referenceRegister.add(new EndpointReference(endpoint));
+            }
         } catch (Exception ex) {
             logger.error("Unexpected error while creating endpoint connector", ex);
         }
@@ -86,7 +129,7 @@ public class EndpointGroupLifecycleManager extends AbstractLifecycleComponent<En
         if (endpoint != null) {
             try {
                 endpoints.remove(endpoint);
-                endpointsTarget.remove(endpoint.name());
+                referenceRegister.remove(EndpointReference.REFERENCE_PREFIX + endpoint.name());
                 endpoint.connector().stop();
             } catch (Exception ex) {
                 logger.error("Unexpected error while closing endpoint connector", ex);
@@ -126,5 +169,9 @@ public class EndpointGroupLifecycleManager extends AbstractLifecycleComponent<En
     @Override
     public Collection<io.gravitee.gateway.api.endpoint.Endpoint> endpoints() {
         return endpoints;
+    }
+
+    public LoadBalancedEndpointGroup getGroup() {
+        return lbGroup;
     }
 }

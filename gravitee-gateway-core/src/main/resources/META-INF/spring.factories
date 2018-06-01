@@ -1,2 +1,2 @@
 io.gravitee.gateway.api.expression.TemplateVariableProvider=\
-    io.gravitee.gateway.core.endpoint.lifecycle.EndpointLifecycleManager
+    io.gravitee.gateway.core.endpoint.ref.ReferenceRegister

@@ -16,7 +16,14 @@
 package io.gravitee.gateway.handlers.api;
 
 import io.gravitee.definition.model.Api;
-import io.gravitee.gateway.core.endpoint.lifecycle.EndpointLifecycleManagerFactory;
+import io.gravitee.gateway.core.endpoint.factory.EndpointFactory;
+import io.gravitee.gateway.core.endpoint.factory.spring.SpringFactoriesEndpointFactory;
+import io.gravitee.gateway.core.endpoint.lifecycle.GroupLifecyleManager;
+import io.gravitee.gateway.core.endpoint.lifecycle.impl.DefaultGroupLifecycleManager;
+import io.gravitee.gateway.core.endpoint.ref.ReferenceRegister;
+import io.gravitee.gateway.core.endpoint.ref.impl.DefaultReferenceRegister;
+import io.gravitee.gateway.core.endpoint.resolver.EndpointResolver;
+import io.gravitee.gateway.core.endpoint.resolver.impl.TargetEndpointResolver;
 import io.gravitee.gateway.core.invoker.InvokerFactory;
 import io.gravitee.gateway.handlers.api.context.ExecutionContextFactory;
 import io.gravitee.gateway.handlers.api.context.TemplateVariableProviderFactory;
@@ -113,7 +120,21 @@ public class ApiHandlerConfiguration {
     }
 
     @Bean
-    public EndpointLifecycleManagerFactory endpointLifecycleManagerFactory() {
-        return new EndpointLifecycleManagerFactory();
+    public ReferenceRegister referenceRegister() {
+        return new DefaultReferenceRegister();
+    }
+    @Bean
+    public GroupLifecyleManager groupLifecyleManager() {
+        return new DefaultGroupLifecycleManager();
+    }
+
+    @Bean
+    public EndpointResolver endpointResolver() {
+        return new TargetEndpointResolver();
+    }
+
+    @Bean
+    public EndpointFactory endpointFactory() {
+        return new SpringFactoriesEndpointFactory();
     }
 }

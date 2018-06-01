@@ -92,7 +92,6 @@ public class DefaultInvokerTest {
         when(executionContext.getAttribute(ExecutionContext.ATTR_REQUEST_ENDPOINT)).thenReturn(targetUri);
         when(endpoint.available()).thenReturn(true);
         when(endpoint.target()).thenReturn("/test");
-        when(endpoint.headers()).thenReturn(httpHeaders);
         when(endpoint.available()).thenReturn(true);
         when(endpoint.connector()).thenReturn(connector);
         when(connector.request(any(ProxyRequest.class))).thenReturn(proxyConnection);
